@@ -13,17 +13,19 @@ public class HelloJava
   }
 }
 
-class HelloComponent extends JComponent 
-	implements MouseMotionListener, ActionListener
+class HelloComponent extends JComponent
+    implements MouseMotionListener, ActionListener, Runnable 
 {
   String theMessage;
-  int messageX = 125, messageY = 95;  // Coordinates of the message
+  int messageX = 125, messageY = 95; // Coordinates of the message
 
   JButton theButton;
 
-  int colorIndex;  // Current index into someColors
+  int colorIndex; // Current index into someColors.
   static Color[] someColors = { 
 	Color.black, Color.red, Color.green, Color.blue, Color.magenta };
+
+  boolean blinkState;
 
   public HelloComponent( String message ) {
     theMessage = message;
@@ -32,35 +34,47 @@ class HelloComponent extends JComponent
     add( theButton );
     theButton.addActionListener( this );
     addMouseMotionListener( this );
+    Thread t = new Thread( this );
+    t.start();
   }
 
   public void paintComponent( Graphics g ) {
+    g.setColor(blinkState ? getBackground() : currentColor(  ));
     g.drawString(theMessage, messageX, messageY);
   }
 
-  public void mouseDragged( MouseEvent e ) {
+  public void mouseDragged(MouseEvent e) {
     messageX = e.getX();
     messageY = e.getY();
     repaint();
   }
 
-  public void mouseMoved( MouseEvent e ) {}
+  public void mouseMoved(MouseEvent e) { }
 
   public void actionPerformed( ActionEvent e ) {
-    // Did somebody push our button?
-    if (e.getSource() == theButton)
+    if ( e.getSource() == theButton )
       changeColor();
   }
 
   synchronized private void changeColor() {
-    // Change the index to the next color, awkwardly.
     if (++colorIndex == someColors.length)
       colorIndex = 0;
-    setForeground(currentColor(  )); // Use the new color.
-    repaint(  ); // Paint again so we can see the change.
+    setForeground( currentColor() );
+    repaint();
   }
 
-  synchronized private Color currentColor() {
+  synchronized private Color currentColor(  ) {
     return someColors[colorIndex];
   }
+
+  public void run(  ) {
+    try {
+      while(true) {
+        blinkState = !blinkState; // Toggle blinkState.
+        repaint(); // Show the change.
+        Thread.sleep(300);
+      }
+    } catch (InterruptedException ie) { }
+  }
 }
+
